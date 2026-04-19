@@ -3,34 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f7f9; padding: 15px; margin: 0; color: #333; }
+        body { font-family: -apple-system, sans-serif; background: #f4f7f9; padding: 15px; margin: 0; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        h3 { color: #0088cc; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; }
-        label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 10px; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; outline: none; }
-        input:focus, select:focus { border-color: #0088cc; }
-        .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 18px; border-radius: 8px; font-weight: bold; margin-top: 20px; font-size: 16px; cursor: pointer; }
-        .btn-submit:disabled { background: #aaa; }
-        .cart-item { background: #f0f9ff; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; border-left: 4px solid #0088cc; font-size: 14px; }
-        .results { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: calc(100% - 70px); z-index: 100; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h3 { color: #0088cc; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; font-size: 16px; }
+        label { font-size: 13px; font-weight: bold; display: block; margin-top: 10px; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 15px; }
+        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 18px; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+        .results { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: calc(100% - 70px); z-index: 100; border-radius: 8px; }
         .item-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .item-row:hover { background: #f9f9f9; }
-        #loadingMsg { display: none; text-align: center; color: #ff9800; padding: 10px; font-weight: bold; }
-        .error-msg { color: red; font-size: 14px; text-align: center; font-weight: bold; margin-top: 10px; }
+        #loading { display: none; text-align: center; color: #ff9800; font-weight: bold; padding: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h3>📝 ព័ត៌មានបុង</h3>
-    <div id="sysError" class="error-msg"></div>
-    <label>ថ្ងៃខែចុងបុង:</label><input type="date" id="formDate">
-    <label>ដេប៉ូ:</label><select id="depotList"><option value="">-- រង់ចាំទាញទិន្នន័យ --</option></select>
-    <label>តំបន់:</label><select id="zoneList"><option value="">-- រង់ចាំទាញទិន្នន័យ --</option></select>
+    <label>ថ្ងៃខែ:</label><input type="date" id="formDate">
+    <label>ដេប៉ូ:</label><select id="depotList"><option>កំពុងទាញទិន្នន័យ...</option></select>
+    <label>BOQ (អគារ):</label><select id="zoneList"><option>កំពុងទាញទិន្នន័យ...</option></select>
 </div>
 
 <div class="card">
@@ -43,64 +36,41 @@
 </div>
 
 <div class="card">
-    <h3>📸 ថតរូបបុង</h3>
+    <h3>📸 រូបភាព</h3>
     <input type="file" id="photoFile" accept="image/*" capture="environment" multiple>
-    <div id="loadingMsg">⏳ កំពុងដំណើរការ... សូមកុំបិទ!</div>
+    <div id="loading">⏳ កំពុងរក្សាទុក...</div>
     <button class="btn-submit" id="btnSubmit" onclick="submitData()">💾 រក្សាទុក និងផ្ញើរបាយការណ៍</button>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    tg.expand();
-    
-    // ⚠️ ដាក់ URL ថ្មីដែលបានពីការ Deploy ទីនេះ ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbya24RKoctPruJwIDWbri6ZbfWSI4nciNc_m8cLVYdE5013_MjeV1WXZZ9WW1iHvZ2G/exec"; 
-    
+    const SCRIPT_URL = "ដhttps://script.google.com/macros/s/AKfycbwXcOmmUqGTBkNo8M3CtOD6AXJPKj6snT8LF2qCwRE_V9gu3BhIDc24_U3paZ9JWFvl/exec"; 
     const BOT_TOKEN = "8627994315:AAFAsEe3IlsHx7r4K1jExKbB4ETu_F4eDOk";
     const GROUP_ID = "-1003907340354";
 
     let db = { items: [] }, cart = [], selectedItem = null;
     document.getElementById('formDate').valueAsDate = new Date();
 
-    // ទាញទិន្នន័យដំបូង
-    fetch(SCRIPT_URL, { method: 'GET', redirect: 'follow' })
-        .then(response => {
-            if (!response.ok) throw new Error("បណ្ដាញមានបញ្ហា: " + response.status);
-            return response.json();
-        })
-        .then(res => {
-            if (res.error) {
-                document.getElementById('sysError').innerText = "❌ បញ្ហា Sheet: " + res.error;
-                return;
-            }
-            db = res;
-            const dList = document.getElementById('depotList');
-            const zList = document.getElementById('zoneList');
-            dList.innerHTML = ""; zList.innerHTML = "";
-            res.depots.forEach(d => dList.add(new Option(d, d)));
-            res.zones.forEach(z => zList.add(new Option(z, z)));
-        })
-        .catch(err => {
-            document.getElementById('sysError').innerText = "❌ ភ្ជាប់ទៅ Google មិនបាន! សូមពិនិត្យ Web App URL ម្តងទៀត។";
-            console.error(err);
-        });
+    fetch(SCRIPT_URL).then(r => r.json()).then(res => {
+        db = res;
+        const dList = document.getElementById('depotList');
+        const zList = document.getElementById('zoneList');
+        dList.innerHTML = ""; zList.innerHTML = "";
+        res.depots.forEach(d => dList.add(new Option(d, d)));
+        res.zones.forEach(z => zList.add(new Option(z, z)));
+    });
 
     function searchItem() {
         const val = document.getElementById('itemSearch').value.toLowerCase();
         const box = document.getElementById('resBox');
         box.innerHTML = '';
         if (val.length < 1) { box.style.display = 'none'; return; }
-        
         const matches = db.items.filter(i => i.name.toLowerCase().includes(val));
         matches.slice(0, 10).forEach(i => {
             const div = document.createElement('div');
             div.className = 'item-row';
-            div.innerHTML = `<strong>${i.name}</strong> <small>(${i.code})</small>`;
-            div.onclick = () => { 
-                selectedItem = i; 
-                document.getElementById('itemSearch').value = i.name; 
-                box.style.display = 'none'; 
-            };
+            div.innerHTML = `<strong>${i.name}</strong>`;
+            div.onclick = () => { selectedItem = i; document.getElementById('itemSearch').value = i.name; box.style.display = 'none'; };
             box.appendChild(div);
         });
         box.style.display = matches.length > 0 ? 'block' : 'none';
@@ -108,73 +78,42 @@
 
     function addToCart() {
         const qty = document.getElementById('qty').value;
-        if (!selectedItem || !qty) return tg.showAlert("សូមជ្រើសរើសទំនិញ និងបញ្ជាក់ចំនួន!");
+        if (!selectedItem || !qty) return alert("សូមបំពេញឱ្យអស់!");
         cart.push({ ...selectedItem, qty: qty });
-        
-        document.getElementById('cartList').innerHTML = cart.map((item, i) => `
-            <div class="cart-item">
-                <span>${i+1}. ${item.name}</span>
-                <span><strong>${item.qty}</strong> ${item.unit}</span>
-            </div>
-        `).join('');
-        
-        document.getElementById('itemSearch').value = '';
-        document.getElementById('qty').value = '';
-        selectedItem = null;
+        document.getElementById('cartList').innerHTML = cart.map((it, i) => `<div>${i+1}. ${it.name} - ${it.qty}</div>`).join('');
+        document.getElementById('itemSearch').value = ''; document.getElementById('qty').value = ''; selectedItem = null;
     }
 
     async function submitData() {
-        if (cart.length === 0) return tg.showAlert("សូមបញ្ជូលទំនិញចូលបញ្ជីសិន!");
+        if (cart.length === 0) return alert("បញ្ជីទទេ!");
         const photos = document.getElementById('photoFile').files;
-        if (photos.length === 0) return tg.showAlert("សូមបញ្ចូលរូបភាពបុងសិន!");
+        if (photos.length === 0) return alert("សូមថតរូបបុង!");
 
-        const btn = document.getElementById('btnSubmit');
-        const loader = document.getElementById('loadingMsg');
-        btn.disabled = true; loader.style.display = 'block';
+        document.getElementById('btnSubmit').disabled = true;
+        document.getElementById('loading').style.display = 'block';
 
         try {
-            // ១. ផ្ញើទៅ Google Sheet
-            const response = await fetch(SCRIPT_URL, { 
-                method: 'POST', 
-                body: JSON.stringify({
-                    selectedDate: document.getElementById('formDate').value,
-                    depot: document.getElementById('depotList').value,
-                    zone: document.getElementById('zoneList').value,
-                    items: cart,
-                    telegramId: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "6557953237"
-                })
-            });
+            const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+                selectedDate: document.getElementById('formDate').value,
+                depot: document.getElementById('depotList').value,
+                zone: document.getElementById('zoneList').value,
+                items: cart,
+                telegramId: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "6557953237"
+            })});
             const resJson = await response.json();
-            
-            if (resJson.status === "error") throw new Error(resJson.message);
 
-            // ២. ផ្ញើទៅ Telegram
             const formData = new FormData();
             formData.append('chat_id', GROUP_ID);
-            
             const media = [];
             for (let i = 0; i < photos.length; i++) {
-                const key = `p${i}`;
-                formData.append(key, photos[i]);
-                media.push({
-                    type: 'photo',
-                    media: `attach://${key}`,
-                    caption: i === 0 ? resJson.reportText : "", 
-                    parse_mode: 'Markdown'
-                });
+                formData.append(`p${i}`, photos[i]);
+                media.push({ type: 'photo', media: `attach://p${i}`, caption: i === 0 ? resJson.reportText : "", parse_mode: 'Markdown' });
             }
             formData.append('media', JSON.stringify(media));
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup`, { method: 'POST', body: formData });
 
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup`, {
-                method: 'POST', body: formData
-            });
-
-            tg.showAlert("✅ រក្សាទុកជោគជ័យ!");
-            tg.close();
-        } catch (e) {
-            tg.showAlert("❌ កំហុសបច្ចេកទេស៖ " + e.message);
-            btn.disabled = false; loader.style.display = 'none';
-        }
+            tg.showAlert("✅ រួចរាល់!"); tg.close();
+        } catch (e) { alert("Error: " + e); }
     }
 </script>
 </body>
