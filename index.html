@@ -3,31 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: -apple-system, sans-serif; background: #f4f7f9; padding: 15px; margin: 0; color: #333; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        h3 { color: #0088cc; margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; display: flex; align-items: center; }
-        label { font-size: 13px; font-weight: 600; color: #666; display: block; margin-top: 10px; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 15px; box-sizing: border-box; outline: none; transition: 0.3s; }
-        input:focus { border-color: #0088cc; box-shadow: 0 0 5px rgba(0,136,204,0.2); }
-        .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 18px; border-radius: 10px; font-weight: bold; margin-top: 25px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,136,204,0.3); }
-        .btn-submit:disabled { background: #ccc; box-shadow: none; }
-        .cart-item { background: #f9feff; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; border-left: 5px solid #0088cc; font-size: 14px; }
-        .results { border: 1px solid #ddd; max-height: 180px; overflow-y: auto; display: none; background: white; position: absolute; width: calc(100% - 70px); z-index: 100; border-radius: 10px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        .item-row { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-        .item-row:hover { background: #f0faff; }
-        #loading { display: none; text-align: center; color: #0088cc; padding: 10px; font-weight: bold; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        h3 { color: #0088cc; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; }
+        label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 10px; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; outline: none; }
+        input:focus, select:focus { border-color: #0088cc; }
+        .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 18px; border-radius: 8px; font-weight: bold; margin-top: 20px; font-size: 16px; cursor: pointer; }
+        .btn-submit:disabled { background: #aaa; }
+        .cart-item { background: #f0f9ff; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; border-left: 4px solid #0088cc; font-size: 14px; }
+        .results { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: calc(100% - 70px); z-index: 100; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .item-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .item-row:hover { background: #f9f9f9; }
+        #loadingMsg { display: none; text-align: center; color: #ff9800; padding: 10px; font-weight: bold; }
+        .error-msg { color: red; font-size: 14px; text-align: center; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h3>📝 ព័ត៌មានបុង</h3>
-    <label>ថ្ងៃខែបុង:</label><input type="date" id="formDate">
-    <label>ដេប៉ូ:</label><select id="depotList"><option value="">-- កំពុងទាញទិន្នន័យ --</option></select>
-    <label>តំបន់/អគារ:</label><select id="zoneList"><option value="">-- កំពុងទាញទិន្នន័យ --</option></select>
+    <div id="sysError" class="error-msg"></div>
+    <label>ថ្ងៃខែចុងបុង:</label><input type="date" id="formDate">
+    <label>ដេប៉ូ:</label><select id="depotList"><option value="">-- រង់ចាំទាញទិន្នន័យ --</option></select>
+    <label>តំបន់:</label><select id="zoneList"><option value="">-- រង់ចាំទាញទិន្នន័យ --</option></select>
 </div>
 
 <div class="card">
@@ -42,25 +45,34 @@
 <div class="card">
     <h3>📸 ថតរូបបុង</h3>
     <input type="file" id="photoFile" accept="image/*" capture="environment" multiple>
-    <div id="loading">⏳ កំពុងរក្សាទុក... សូមរង់ចាំ</div>
-    <button class="btn-submit" id="btnAll" onclick="submitEverything()">💾 រក្សាទុក និងផ្ញើរបាយការណ៍</button>
+    <div id="loadingMsg">⏳ កំពុងដំណើរការ... សូមកុំបិទ!</div>
+    <button class="btn-submit" id="btnSubmit" onclick="submitData()">💾 រក្សាទុក និងផ្ញើរបាយការណ៍</button>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    // --- សំខាន់៖ ប្តូរ URL ថ្មីរបស់អ្នកនៅទីនេះ ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbze8niOrSMhUUpj-Sc-Yn-WY5U6tkmXA40GomjjD3pRix37DXi4LnoRwHXev0Y_uok/exec"; 
+    tg.expand();
+    
+    // ⚠️ ដាក់ URL ថ្មីដែលបានពីការ Deploy ទីនេះ ⚠️
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2AowMymDP9Y-VoU2yTwSY5B-bEc7J1m62vf9Yz2uu_0TiE9Xb-kKbYfzY5sHMNvju/exec"; 
+    
     const BOT_TOKEN = "8627994315:AAFAsEe3IlsHx7r4K1jExKbB4ETu_F4eDOk";
     const GROUP_ID = "-1003907340354";
 
     let db = { items: [] }, cart = [], selectedItem = null;
-
     document.getElementById('formDate').valueAsDate = new Date();
 
-    // ១. ទាញទិន្នន័យពេលបើក App
-    fetch(SCRIPT_URL)
-        .then(r => r.json())
+    // ទាញទិន្នន័យដំបូង
+    fetch(SCRIPT_URL, { method: 'GET', redirect: 'follow' })
+        .then(response => {
+            if (!response.ok) throw new Error("បណ្ដាញមានបញ្ហា: " + response.status);
+            return response.json();
+        })
         .then(res => {
+            if (res.error) {
+                document.getElementById('sysError').innerText = "❌ បញ្ហា Sheet: " + res.error;
+                return;
+            }
             db = res;
             const dList = document.getElementById('depotList');
             const zList = document.getElementById('zoneList');
@@ -69,8 +81,8 @@
             res.zones.forEach(z => zList.add(new Option(z, z)));
         })
         .catch(err => {
+            document.getElementById('sysError').innerText = "❌ ភ្ជាប់ទៅ Google មិនបាន! សូមពិនិត្យ Web App URL ម្តងទៀត។";
             console.error(err);
-            alert("មិនអាចទាញទិន្នន័យបាន! សូមពិនិត្យ Web App URL របស់អ្នក។");
         });
 
     function searchItem() {
@@ -96,36 +108,32 @@
 
     function addToCart() {
         const qty = document.getElementById('qty').value;
-        if (!selectedItem || !qty) return tg.showAlert("សូមជ្រើសរើសទំនិញ និងបញ្ចូលចំនួន!");
+        if (!selectedItem || !qty) return tg.showAlert("សូមជ្រើសរើសទំនិញ និងបញ្ជាក់ចំនួន!");
         cart.push({ ...selectedItem, qty: qty });
-        renderCart();
-        document.getElementById('itemSearch').value = '';
-        document.getElementById('qty').value = '';
-        selectedItem = null;
-    }
-
-    function renderCart() {
-        const list = document.getElementById('cartList');
-        list.innerHTML = cart.map((item, i) => `
+        
+        document.getElementById('cartList').innerHTML = cart.map((item, i) => `
             <div class="cart-item">
                 <span>${i+1}. ${item.name}</span>
                 <span><strong>${item.qty}</strong> ${item.unit}</span>
             </div>
         `).join('');
+        
+        document.getElementById('itemSearch').value = '';
+        document.getElementById('qty').value = '';
+        selectedItem = null;
     }
 
-    async function submitEverything() {
-        if (cart.length === 0) return tg.showAlert("បញ្ជីទំនិញនៅទំនេរ!");
+    async function submitData() {
+        if (cart.length === 0) return tg.showAlert("សូមបញ្ជូលទំនិញចូលបញ្ជីសិន!");
         const photos = document.getElementById('photoFile').files;
-        if (photos.length === 0) return tg.showAlert("សូមថតរូបបុងជាមុនសិន!");
+        if (photos.length === 0) return tg.showAlert("សូមបញ្ចូលរូបភាពបុងសិន!");
 
-        const btn = document.getElementById('btnAll');
-        const loader = document.getElementById('loading');
-        btn.disabled = true;
-        loader.style.display = 'block';
+        const btn = document.getElementById('btnSubmit');
+        const loader = document.getElementById('loadingMsg');
+        btn.disabled = true; loader.style.display = 'block';
 
         try {
-            // ក. បញ្ជូនទិន្នន័យទៅ Google Sheet
+            // ១. ផ្ញើទៅ Google Sheet
             const response = await fetch(SCRIPT_URL, { 
                 method: 'POST', 
                 body: JSON.stringify({
@@ -137,18 +145,20 @@
                 })
             });
             const resJson = await response.json();
+            
+            if (resJson.status === "error") throw new Error(resJson.message);
 
-            // ខ. ផ្ញើរូបភាពទៅ Telegram ជា Album
+            // ២. ផ្ញើទៅ Telegram
             const formData = new FormData();
             formData.append('chat_id', GROUP_ID);
             
             const media = [];
             for (let i = 0; i < photos.length; i++) {
-                const fileKey = `p${i}`;
-                formData.append(fileKey, photos[i]);
+                const key = `p${i}`;
+                formData.append(key, photos[i]);
                 media.push({
                     type: 'photo',
-                    media: `attach://${fileKey}`,
+                    media: `attach://${key}`,
                     caption: i === 0 ? resJson.reportText : "", 
                     parse_mode: 'Markdown'
                 });
@@ -156,16 +166,14 @@
             formData.append('media', JSON.stringify(media));
 
             await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup`, {
-                method: 'POST',
-                body: formData
+                method: 'POST', body: formData
             });
 
-            tg.showAlert("✅ រក្សាទុក និងផ្ញើរបាយការណ៍រួចរាល់!");
+            tg.showAlert("✅ រក្សាទុកជោគជ័យ!");
             tg.close();
         } catch (e) {
-            tg.showAlert("❌ មានបញ្ហា៖ " + e);
-            btn.disabled = false;
-            loader.style.display = 'none';
+            tg.showAlert("❌ កំហុសបច្ចេកទេស៖ " + e.message);
+            btn.disabled = false; loader.style.display = 'none';
         }
     }
 </script>
