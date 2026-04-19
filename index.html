@@ -10,12 +10,9 @@
         h3 { color: #0088cc; margin: 0 0 10px 0; font-size: 16px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
         label { font-size: 12px; font-weight: bold; color: #555; display: block; margin-top: 8px; }
         input, select { width: 100%; padding: 12px; margin-top: 4px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
-        
+        .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 18px; border-radius: 8px; font-weight: bold; margin-top: 20px; font-size: 16px; cursor: pointer; }
         .cart-item { background: #eef9ff; padding: 10px; border-radius: 8px; margin-bottom: 5px; display: flex; justify-content: space-between; font-size: 14px; border-left: 5px solid #0088cc; }
-        .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
-        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 18px; border-radius: 8px; font-weight: bold; margin-top: 20px; display: none; }
-        .btn-photo { background: #28a745; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
-        
         .results { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: calc(100% - 50px); z-index: 100; border-radius: 8px; }
         .item-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
     </style>
@@ -26,33 +23,30 @@
     <h3>📝 ព័ត៌មានបុង</h3>
     <label>ថ្ងៃខែ:</label>
     <input type="date" id="formDate">
-    <label>ជ្រើសរើសដេប៉ូ:</label>
+    <label>ដេប៉ូ:</label>
     <select id="depotList"></select>
-    <label>ជ្រើសរើសតំបន់:</label>
+    <label>តំបន់:</label>
     <select id="zoneList"></select>
 </div>
 
 <div class="card">
-    <h3>📦 បញ្ចូលទំនិញ (បានច្រើនមុខ)</h3>
-    <input type="text" id="itemSearch" placeholder="ស្វែងរកឈ្មោះទំនិញ..." onkeyup="searchItem()">
+    <h3>📦 បញ្ចូលទំនិញ (ជ្រើសរើសតាមឈ្មោះ)</h3>
+    <input type="text" id="itemSearch" placeholder="វាយរកឈ្មោះទំនិញ..." onkeyup="searchItem()">
     <div id="resBox" class="results"></div>
-    <input type="number" id="qty" placeholder="បញ្ចូលចំនួន..." style="margin-top: 10px;">
-    <button class="btn-add" onclick="addToCart()">➕ ថែមចូលបញ្ជីរង់ចាំ</button>
-
+    <input type="number" id="qty" placeholder="ចំនួន..." style="margin-top: 10px;">
+    <button class="btn-add" onclick="addToCart()">➕ ថែមចូលបញ្ជី</button>
     <div id="cartList" style="margin-top: 15px;"></div>
-    <button class="btn-submit" id="btnSaveAll" onclick="sendAllData()">💾 រក្សាទុកទិន្នន័យទាំងអស់</button>
 </div>
 
-<div class="card" style="border-left: 5px solid #28a745;">
-    <h3>📸 ថតរូបបុង (ម្ដងបាន ១០ សន្លឹក)</h3>
+<div class="card">
+    <h3>📸 ថតរូបបុង (Max 10)</h3>
     <input type="file" id="photoFile" accept="image/*" capture="environment" multiple>
-    <button class="btn-photo" id="btnPhoto" onclick="sendPhotos()">📤 ផ្ញើរូបភាពចូល Group</button>
+    <button class="btn-submit" id="btnAll" onclick="submitAll()">💾 រក្សាទុក និងផ្ញើទៅ Group</button>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    // កុំភ្លេចប្តូរ URL ខាងក្រោមនេះតាម Web App URL ថ្មីរបស់អ្នក
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwknIRjhaDX2tEfu8aJX6hMbdmq2_okD4-FQVs2vYbNXd4BzRcWHnpRi1VU3Cm9pik0/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwioyAyzWgh2U0zV5TaWYCk8nQZ2EAzvZ9e-1I6rv8czvPgtUvKpXU2aMJyCQGJw5Z/exec";
     const BOT_TOKEN = "8627994315:AAFAsEe3IlsHx7r4K1jExKbB4ETu_F4eDOk";
     const GROUP_ID = "-1003907340354";
 
@@ -60,13 +54,10 @@
 
     document.getElementById('formDate').valueAsDate = new Date();
 
-    // ទាញទិន្នន័យសម្រាប់ Dropdown
     fetch(SCRIPT_URL).then(r => r.json()).then(res => {
         db = res;
         const dList = document.getElementById('depotList');
         const zList = document.getElementById('zoneList');
-        dList.innerHTML = '<option value="">--- រើសដេប៉ូ ---</option>';
-        zList.innerHTML = '<option value="">--- រើសតំបន់ ---</option>';
         res.depots.forEach(d => dList.add(new Option(d, d)));
         res.zones.forEach(z => zList.add(new Option(z, z)));
     });
@@ -79,7 +70,7 @@
         db.items.filter(i => i.name.toLowerCase().includes(val)).slice(0, 10).forEach(i => {
             const div = document.createElement('div');
             div.className = 'item-row';
-            div.innerHTML = `<strong>${i.name}</strong> (${i.unit})`;
+            div.innerHTML = `<strong>${i.name}</strong>`;
             div.onclick = () => { 
                 selectedItem = i; 
                 document.getElementById('itemSearch').value = i.name; 
@@ -92,7 +83,7 @@
 
     function addToCart() {
         const qty = document.getElementById('qty').value;
-        if (!selectedItem || !qty) return tg.showAlert("សូមរើសទំនិញ និងបញ្ចូលចំនួន!");
+        if (!selectedItem || !qty) return tg.showAlert("សូមរើសទំនិញ និងដាក់ចំនួន!");
         cart.push({ ...selectedItem, qty: qty });
         renderCart();
         document.getElementById('itemSearch').value = '';
@@ -102,48 +93,43 @@
 
     function renderCart() {
         const list = document.getElementById('cartList');
-        list.innerHTML = '<strong>បញ្ជីរង់ចាំ៖</strong>';
-        cart.forEach((item, index) => {
-            list.innerHTML += `<div class="cart-item"><span>${index+1}. ${item.name}</span> <span>${item.qty} ${item.unit}</span></div>`;
-        });
-        document.getElementById('btnSaveAll').style.display = cart.length > 0 ? 'block' : 'none';
+        list.innerHTML = cart.map((item, i) => `<div class="cart-item"><span>${i+1}. ${item.name}</span> <span>${item.qty} ${item.unit}</span></div>`).join('');
     }
 
-    function sendAllData() {
-        if (cart.length === 0) return;
-        const btn = document.getElementById('btnSaveAll');
-        btn.disabled = true; btn.innerText = "កំពុងរក្សាទុក...";
+    async function submitAll() {
+        if (cart.length === 0) return tg.showAlert("សូមបន្ថែមទំនិញសិន!");
+        const photos = document.getElementById('photoFile').files;
+        if (photos.length === 0) return tg.showAlert("សូមថតរូបបុងសិន!");
 
-        const payload = {
-            selectedDate: document.getElementById('formDate').value,
-            depot: document.getElementById('depotList').value,
-            zone: document.getElementById('zoneList').value,
-            items: cart,
-            telegramId: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "6557953237"
-        };
+        const btn = document.getElementById('btnAll');
+        btn.disabled = true; btn.innerText = "កំពុងដំណើរការ...";
 
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { 
-            tg.showAlert("✅ រក្សាទុកទិន្នន័យ " + cart.length + " មុខ រួចរាល់!"); 
-            tg.close(); 
-        });
-    }
+        try {
+            // បញ្ជូនទិន្នន័យ (បញ្ជូនតែលេខកូដទៅកាន់ Sheet)
+            const payload = {
+                selectedDate: document.getElementById('formDate').value,
+                depot: document.getElementById('depotList').value,
+                zone: document.getElementById('zoneList').value,
+                items: cart.map(item => ({ code: item.code, name: item.name, qty: item.qty, unit: item.unit })),
+                telegramId: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "6557953237"
+            };
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
 
-    async function sendPhotos() {
-        const files = document.getElementById('photoFile').files;
-        if (files.length === 0) return tg.showAlert("សូមថតរូបបុងសិន!");
-        const btn = document.getElementById('btnPhoto');
-        btn.disabled = true; btn.innerText = "កំពុងផ្ញើ " + files.length + " រូប...";
+            // ផ្ញើរូបភាពទៅ Telegram
+            for (let i = 0; i < photos.length; i++) {
+                const fd = new FormData();
+                fd.append('chat_id', GROUP_ID);
+                fd.append('photo', photos[i]);
+                fd.append('caption', `📸 រូបបុងទី ${i+1}/${photos.length}\n👤 ដោយ៖ ` + (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "User"));
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+            }
 
-        for (let i = 0; i < files.length; i++) {
-            const fd = new FormData();
-            fd.append('chat_id', GROUP_ID);
-            fd.append('photo', files[i]);
-            fd.append('caption', `📸 រូបភាពទី ${i+1}/${files.length}\n👤 បញ្ជូនដោយ៖ ` + (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "User"));
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+            tg.showAlert("✅ រក្សាទុក និងផ្ញើរូបភាពជោគជ័យ!");
+            tg.close();
+        } catch (e) {
+            tg.showAlert("❌ កំហុស៖ " + e);
+            btn.disabled = false; btn.innerText = "💾 រក្សាទុក និងផ្ញើទៅ Group";
         }
-        tg.showAlert("✅ បានផ្ញើរូបភាពទាំងអស់ចូល Group!");
-        btn.disabled = false; btn.innerText = "📤 ផ្ញើរូបភាពចូល Group";
     }
 </script>
 </body>
