@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h3 { color: #0088cc; margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        label { font-size: 13px; font-weight: bold; color: #666; display: block; margin-top: 10px; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .btn-photo { background: #28a745; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .results { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; border-radius: 8px; background: white; }
+        .item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
+        .item:hover { background: #f0f7ff; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h3>📥 បញ្ចូលទិន្នន័យស្តុក</h3>
+    <label>ថ្ងៃខែក្នុងបុង:</label>
+    <input type="date" id="formDate">
+    
+    <label>ជ្រើសរើសដេប៉ូ:</label>
+    <select id="depotList"></select>
+    
+    <label>ជ្រើសរើសតំបន់/អាគារ:</label>
+    <select id="zoneList"></select>
+    
+    <label>ស្វែងរកទំនិញ:</label>
+    <input type="text" id="itemSearch" placeholder="វាយឈ្មោះទំនិញដើម្បីរក..." onkeyup="searchItem()">
+    <div id="resBox" class="results"></div>
+    
+    <label>ចំនួន (Qty):</label>
+    <input type="number" id="qty" placeholder="0.00">
+    <button class="btn-submit" id="btnSave" onclick="sendData()">រក្សាទុកក្នុង Google Sheet</button>
+</div>
+
+<div class="card" style="border-left: 5px solid #28a745;">
+    <h3>📸 ថតរូបបុងបញ្ជាក់ (Max 10)</h3>
+    <input type="file" id="photoFile" accept="image/*" capture="environment" multiple>
+    <button class="btn-photo" id="btnMultiPhoto" onclick="sendMultiplePhotos()">ផ្ញើរូបភាពចូល Group</button>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // ព័ត៌មានដែលអ្នកបានផ្តល់ឱ្យ
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzamRFhtsc0_UPLNbDa0pLhIfbelTgb5HOIYUA4YPuN1gBcYj5epr0e0QMUv5Rmh3HF/exec";
+    const BOT_TOKEN = "8627994315:AAFAsEe3IlsHx7r4K1jExKbB4ETu_F4eDOk";
+    const GROUP_ID = "-1003907340354";
+
+    let db = { items: [] }, selectedItem = null;
+
+    document.getElementById('formDate').valueAsDate = new Date();
+
+    // ទាញទិន្នន័យដំបូង
+    fetch(SCRIPT_URL).then(r => r.json()).then(res => {
+        db = res;
+        const dList = document.getElementById('depotList');
+        res.depots.forEach(d => dList.add(new Option(d, d)));
+        const zList = document.getElementById('zoneList');
+        res.zones.forEach(z => zList.add(new Option(z, z)));
+    });
+
+    function searchItem() {
+        const val = document.getElementById('itemSearch').value.toLowerCase();
+        const box = document.getElementById('resBox');
+        box.innerHTML = '';
+        if (val.length < 1) { box.style.display = 'none'; return; }
+        
+        const filtered = db.items.filter(i => i.name.toLowerCase().includes(val));
+        filtered.slice(0, 10).forEach(i => {
+            const div = document.createElement('div');
+            div.className = 'item';
+            div.innerHTML = `<strong>${i.name}</strong><br><small>${i.code} | ${i.unit}</small>`;
+            div.onclick = () => {
+                selectedItem = i;
+                document.getElementById('itemSearch').value = i.name;
+                box.style.display = 'none';
+            };
+            box.appendChild(div);
+        });
+        box.style.display = 'block';
+    }
+
+    function sendData() {
+        const qty = document.getElementById('qty').value;
+        if (!selectedItem || !qty) return tg.showAlert("សូមបំពេញទិន្នន័យឱ្យគ្រប់គ្រាន់!");
+
+        const btn = document.getElementById('btnSave');
+        btn.disabled = true; btn.innerText = "កំពុងរក្សាទុក...";
+
+        const payload = {
+            selectedDate: document.getElementById('formDate').value,
+            depot: document.getElementById('depotList').value,
+            zone: document.getElementById('zoneList').value,
+            itemCode: selectedItem.code,
+            itemName: selectedItem.name,
+            unit: selectedItem.unit,
+            qty: qty,
+            telegramId: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "123456"
+        };
+
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(() => {
+            tg.showAlert("✅ រក្សាទុក និងផ្ញើរបាយការណ៍រួចរាល់!");
+            tg.close();
+        });
+    }
+
+    async function sendMultiplePhotos() {
+        const fileInput = document.getElementById('photoFile');
+        const files = fileInput.files;
+        if (files.length === 0) return tg.showAlert("សូមថតរូបសិន!");
+
+        const btn = document.getElementById('btnMultiPhoto');
+        btn.disabled = true; btn.innerText = "កំពុងផ្ញើ...";
+
+        for (let i = 0; i < files.length; i++) {
+            const fd = new FormData();
+            fd.append('chat_id', GROUP_ID);
+            fd.append('photo', files[i]);
+            fd.append('caption', `📸 រូបទី ${i+1}/${files.length} បញ្ជាក់ដោយ៖ ` + (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "User"));
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+        }
+        tg.showAlert("✅ បានផ្ញើរូបភាពចូល Group រួចរាល់!");
+        btn.disabled = false; btn.innerText = "ផ្ញើរូបភាពចូល Group";
+        fileInput.value = "";
+    }
+</script>
+</body>
+</html>
