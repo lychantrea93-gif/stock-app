@@ -3,37 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Manager Pro</title>
+    <title>Stock Manager - Chantrea</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f7f9; padding: 15px; margin: 0; color: #333; }
-        .card { background: white; padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        h3 { color: #0088cc; margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        body { font-family: -apple-system, sans-serif; background: #f4f7f9; padding: 15px; margin: 0; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h3 { color: #0088cc; margin-top: 0; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
         label { font-size: 12px; font-weight: bold; color: #666; display: block; margin-top: 10px; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
-        .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 20px; width: 100%; font-size: 16px; }
-        .res-box { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; background: white; border-radius: 8px; margin-top: 2px; }
-        .item-row { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
-        .item-row:hover { background: #f0f0f0; }
-        #cart { margin-top: 10px; font-size: 13px; color: #444; }
-        #loading { display: none; color: #ff9800; text-align: center; padding: 10px; font-weight: bold; }
+        .res-box { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; background: white; border-radius: 8px; }
+        .item-row { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        #cart { margin-top: 10px; font-size: 13px; border-top: 1px dashed #ccc; padding-top: 10px; }
+        #loading { display: none; color: #ff9800; text-align: center; font-weight: bold; padding: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h3>📍 ព័ត៌មានទីតាំង</h3>
+    <h3>📍 ព័ត៌មានទូទៅ</h3>
     <label>ថ្ងៃខែបញ្ចូល:</label><input type="date" id="fDate">
     <label>ជ្រើសរើសដេប៉ូ:</label><select id="fDepot"></select>
     <label>ជ្រើសរើសតំបន់/BOQ:</label><select id="fZone"></select>
 </div>
 
 <div class="card">
-    <h3>📦 បញ្ចូលទំនិញ (រើសឈ្មោះ បញ្ចូលជាកូដ)</h3>
-    <input type="text" id="iSearch" placeholder="វាយឈ្មោះទំនិញ..." onkeyup="doSearch()">
+    <h3>📦 បញ្ចូលទំនិញ</h3>
+    <input type="text" id="iSearch" placeholder="ស្វែងរកឈ្មោះទំនិញ..." onkeyup="doSearch()">
     <div id="res" class="res-box"></div>
-    <input type="number" id="iQty" placeholder="ចំនួន (Qty)" style="margin-top:10px;">
+    <input type="number" id="iQty" placeholder="បញ្ចូលចំនួន (Qty)" style="margin-top:10px;">
     <button class="btn-add" onclick="addItem()">+ ថែមចូលបញ្ជី</button>
     <div id="cart"></div>
 </div>
@@ -42,12 +41,13 @@
     <h3>📷 រូបភាពបុង</h3>
     <input type="file" id="fPhoto" accept="image/*" multiple>
     <div id="loading">⏳ កំពុងបញ្ជូនទិន្នន័យ...</div>
-    <button class="btn-submit" id="btn" onclick="sendAll()">💾 រក្សាទុកទិន្នន័យ</button>
+    <button class="btn-submit" id="btn" onclick="sendAll()">💾 រក្សាទុក និងផ្ញើរបាយការណ៍</button>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxudoqAhvl1BaHgr89wfHyGQgEuicbvRnSxG9QnzCdMr3le8Lg224kZLZXM0WZGPCH2/exec"; 
+    // --- ត្រូវប្តូរ URL ខាងក្រោមនេះជានិច្ចពេល Deploy ថ្មី ---
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcyTjHZvOEk4yJdc-IHXyTwjIVQN5o7punrH4WRoVB1dJ-KwxDiAEWbExt29IcbiUC/exec"; 
     const BOT_TOKEN = "8627994315:AAFAsEe3IlsHx7r4K1jExKbB4ETu_F4eDOk";
     const GROUP_ID = "-1003907340354";
 
@@ -55,12 +55,14 @@
     document.getElementById('fDate').valueAsDate = new Date();
 
     async function init() {
-        const r = await fetch(SCRIPT_URL);
-        db = await r.json();
-        const dL = document.getElementById('fDepot');
-        const zL = document.getElementById('fZone');
-        db.depots.forEach(d => dL.add(new Option(d, d)));
-        db.zones.forEach(z => zL.add(new Option(z, z)));
+        try {
+            const r = await fetch(SCRIPT_URL);
+            db = await r.json();
+            const dL = document.getElementById('fDepot');
+            const zL = document.getElementById('fZone');
+            db.depots.forEach(d => dL.add(new Option(d, d)));
+            db.zones.forEach(z => zL.add(new Option(z, z)));
+        } catch(e) { console.log("Init error:", e); }
     }
     init();
 
@@ -69,7 +71,7 @@
         const b = document.getElementById('res'); b.innerHTML = '';
         if(v.length < 1) { b.style.display = 'none'; return; }
         const ms = db.items.filter(i => i.name.toLowerCase().includes(v));
-        ms.slice(0, 8).forEach(i => {
+        ms.slice(0, 10).forEach(i => {
             const d = document.createElement('div'); d.className = 'item-row';
             d.innerHTML = i.name;
             d.onclick = () => { selected = i; document.getElementById('iSearch').value = i.name; b.style.display = 'none'; };
@@ -80,42 +82,60 @@
 
     function addItem() {
         const q = document.getElementById('iQty').value;
-        if(!selected || !q) return alert("រើសទំនិញសិន!");
+        if(!selected || !q) return alert("សូមរើសទំនិញ និងដាក់ចំនួន!");
         cart.push({...selected, qty: q});
         document.getElementById('cart').innerHTML = cart.map((c, i) => `<div>${i+1}. ${c.name} (${c.qty})</div>`).join('');
         document.getElementById('iSearch').value = ''; document.getElementById('iQty').value = ''; selected = null;
     }
 
     async function sendAll() {
-        if(cart.length === 0) return alert("បញ្ជីទទេ!");
+        if(cart.length === 0) return alert("មិនទាន់មានទំនិញក្នុងបញ្ជី!");
         document.getElementById('btn').disabled = true;
         document.getElementById('loading').style.display = 'block';
 
         try {
-            // ១. ផ្ញើទៅ Sheet
-            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
-                selectedDate: document.getElementById('fDate').value,
-                depot: document.getElementById('fDepot').value,
-                zone: document.getElementById('fZone').value,
-                items: cart,
-                telegramId: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "6557953237"
-            })});
-            const resJson = await response.json();
+            // ១. ផ្ញើទៅ Google Sheet
+            const resSheet = await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({
+                    selectedDate: document.getElementById('fDate').value,
+                    depot: document.getElementById('fDepot').value,
+                    zone: document.getElementById('fZone').value,
+                    items: cart
+                })
+            });
+            const resJson = await resSheet.json(); 
 
-            // ២. ផ្ញើទៅ Telegram (ជាមួយរូបភាព)
+            // ២. ផ្ញើទៅ Telegram
             const photos = document.getElementById('fPhoto').files;
             const fd = new FormData();
             fd.append('chat_id', GROUP_ID);
-            const media = [];
-            for(let i=0; i<photos.length; i++) {
-                fd.append(`p${i}`, photos[i]);
-                media.push({ type:'photo', media:`attach://p${i}`, caption: i===0 ? "📥 បញ្ចូលស្តុកថ្មី" : "" });
-            }
-            fd.append('media', JSON.stringify(media));
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup`, { method:'POST', body: fd });
+            
+            let reportMsg = "📥 *របាយការណ៍បញ្ចូលស្តុក*\n" + resJson.reportText;
 
-            tg.showAlert("✅ រួចរាល់!"); tg.close();
-        } catch(e) { alert("Error: " + e); document.getElementById('btn').disabled = false; }
+            if (photos.length > 0) {
+                const media = [];
+                for(let i=0; i<photos.length; i++) {
+                    fd.append(`p${i}`, photos[i]);
+                    media.push({ type:'photo', media:`attach://p${i}`, caption: i===0 ? reportMsg : "", parse_mode: "Markdown" });
+                }
+                fd.append('media', JSON.stringify(media));
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup`, { method:'POST', body: fd });
+            } else {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: GROUP_ID, text: reportMsg, parse_mode: "Markdown" })
+                });
+            }
+
+            tg.showAlert("✅ រក្សាទុកបានជោគជ័យ!");
+            tg.close();
+        } catch(e) { 
+            alert("Error: " + e); 
+            document.getElementById('btn').disabled = false;
+            document.getElementById('loading').style.display = 'none';
+        }
     }
 </script>
 </body>
