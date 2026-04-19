@@ -44,23 +44,26 @@
 
 <script>
     const tg = window.Telegram.WebApp;
-    // ⚠️ ប្តូរ URL ខាងក្រោមនេះ ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwYjstz5fDPeqht-WdU3yLvWYEtQCh0NcTYYwZiCtfnxIckrBsj0c5B0rX3CFEoXxvh/exec"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_pasGn_mtde1qVS4np7XoLyxs_eynTHqOBn_eJm0v4b2gyjoVAt4oduQypH0QH8If/exec"; 
     const BOT_TOKEN = "8627994315:AAFAsEe3IlsHx7r4K1jExKbB4ETu_F4eDOk";
     const GROUP_ID = "-1003907340354";
 
     let db = { items: [] }, cart = [], selectedItem = null;
     document.getElementById('formDate').valueAsDate = new Date();
 
-    // ទាញទិន្នន័យដំបូងសម្រាប់ Droplist
-    fetch(SCRIPT_URL).then(r => r.json()).then(res => {
-        db = res;
-        const dList = document.getElementById('depotList');
-        const zList = document.getElementById('zoneList');
-        dList.innerHTML = ""; zList.innerHTML = "";
-        res.depots.forEach(d => dList.add(new Option(d, d)));
-        res.zones.forEach(z => zList.add(new Option(z, z)));
-    }).catch(e => alert("មិនអាចទាញទិន្នន័យបាន៖ " + e));
+    async function loadData() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            const res = await response.json();
+            db = res;
+            const dList = document.getElementById('depotList');
+            const zList = document.getElementById('zoneList');
+            dList.innerHTML = ""; zList.innerHTML = "";
+            res.depots.forEach(d => dList.add(new Option(d, d)));
+            res.zones.forEach(z => zList.add(new Option(z, z)));
+        } catch (e) { alert("JSON Error: " + e); }
+    }
+    loadData();
 
     function searchItem() {
         const val = document.getElementById('itemSearch').value.toLowerCase();
