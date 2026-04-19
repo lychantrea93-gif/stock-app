@@ -5,17 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; margin: 0; color: #333; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
         h3 { color: #0088cc; margin: 0 0 10px 0; font-size: 16px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
         label { font-size: 12px; font-weight: bold; color: #555; display: block; margin-top: 8px; }
-        input, select { width: 100%; padding: 12px; margin-top: 4px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin-top: 4px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #0088cc; }
         .btn-add { background: #ff9800; color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 18px; border-radius: 8px; font-weight: bold; margin-top: 20px; font-size: 16px; cursor: pointer; }
+        .btn-submit { background: #0088cc; color: white; border: none; width: 100%; padding: 18px; border-radius: 8px; font-weight: bold; margin-top: 20px; font-size: 16px; width: 100%; cursor: pointer; }
+        .btn-submit:disabled { background: #ccc; }
         .cart-item { background: #eef9ff; padding: 10px; border-radius: 8px; margin-bottom: 5px; display: flex; justify-content: space-between; font-size: 14px; border-left: 5px solid #0088cc; }
-        .results { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: calc(100% - 50px); z-index: 100; border-radius: 8px; }
+        .results { border: 1px solid #ddd; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: calc(100% - 50px); z-index: 100; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .item-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
-        #loading { display: none; text-align: center; color: #0088cc; font-weight: bold; margin-top: 10px; }
+        .item-row:hover { background: #f9f9f9; }
+        #loading { display: none; text-align: center; color: #0088cc; font-weight: bold; margin-top: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -23,30 +26,30 @@
 <div class="card">
     <h3>📝 ព័ត៌មានបុង</h3>
     <label>ថ្ងៃខែ:</label><input type="date" id="formDate">
-    <label>ដេប៉ូ:</label><select id="depotList"></select>
-    <label>តំបន់:</label><select id="zoneList"></select>
+    <label>ជ្រើសរើសដេប៉ូ:</label><select id="depotList"><option value="">-- រង់ចាំទិន្នន័យ --</option></select>
+    <label>ជ្រើសរើសតំបន់/អគារ:</label><select id="zoneList"><option value="">-- រង់ចាំទិន្នន័យ --</option></select>
 </div>
 
 <div class="card">
-    <h3>📦 បញ្ចូលទំនិញ</h3>
+    <h3>📦 បញ្ចូលទំនិញទៅក្នុងបញ្ជី</h3>
     <input type="text" id="itemSearch" placeholder="ស្វែងរកឈ្មោះទំនិញ..." onkeyup="searchItem()">
     <div id="resBox" class="results"></div>
-    <input type="number" id="qty" placeholder="បញ្ចូលចំនួន..." style="margin-top: 10px;">
+    <input type="number" id="qty" placeholder="បញ្ចូលចំនួន (Qty)..." style="margin-top: 10px;">
     <button class="btn-add" onclick="addToCart()">➕ ថែមចូលបញ្ជី</button>
     <div id="cartList" style="margin-top: 15px;"></div>
 </div>
 
 <div class="card">
-    <h3>📸 ថតរូបបុង</h3>
+    <h3>📸 ថតរូបបុងបញ្ជាក់</h3>
     <input type="file" id="photoFile" accept="image/*" capture="environment" multiple>
-    <div id="loading">កំពុងរក្សាទុក... សូមរង់ចាំ</div>
-    <button class="btn-submit" id="btnSubmitAll" onclick="submitEverything()">💾 រក្សាទុក និងផ្ញើរបាយការណ៍</button>
+    <div id="loading">⏳ កំពុងរក្សាទុក... សូមកុំបិទ App</div>
+    <button class="btn-submit" id="btnAll" onclick="submitEverything()">💾 រក្សាទុក និងផ្ញើរបាយការណ៍</button>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    // កុំភ្លេចប្តូរ URL ខាងក្រោមនេះ
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZz4z--EeHmxubH-DF84ZhI1k19Hpl0tST8BiQj0QnIHsLhCNTbAhO5EzT7fKdWFHq/execេះ";
+    // --- ប្តូរ URL នៅទីនេះ ---
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmQa1P2a4bwQRA651y0Cb6sm7DIEKDLLg609hOtdHoKfnq8-lRDQVcw2XSGydXADwK/exec"; 
     const BOT_TOKEN = "8627994315:AAFAsEe3IlsHx7r4K1jExKbB4ETu_F4eDOk";
     const GROUP_ID = "-1003907340354";
 
@@ -54,23 +57,27 @@
 
     document.getElementById('formDate').valueAsDate = new Date();
 
+    // ទាញទិន្នន័យពី Sheet ពេលបើក App
     fetch(SCRIPT_URL).then(r => r.json()).then(res => {
         db = res;
         const dList = document.getElementById('depotList');
         const zList = document.getElementById('zoneList');
+        dList.innerHTML = ""; zList.innerHTML = "";
         res.depots.forEach(d => dList.add(new Option(d, d)));
         res.zones.forEach(z => zList.add(new Option(z, z)));
-    });
+    }).catch(err => alert("កំហុសទាញទិន្នន័យ៖ " + err));
 
     function searchItem() {
         const val = document.getElementById('itemSearch').value.toLowerCase();
         const box = document.getElementById('resBox');
         box.innerHTML = '';
         if (val.length < 1) { box.style.display = 'none'; return; }
-        db.items.filter(i => i.name.toLowerCase().includes(val)).slice(0, 10).forEach(i => {
+        
+        const matches = db.items.filter(i => i.name.toLowerCase().includes(val));
+        matches.slice(0, 10).forEach(i => {
             const div = document.createElement('div');
             div.className = 'item-row';
-            div.innerHTML = `<strong>${i.name}</strong>`;
+            div.innerHTML = `<strong>${i.name}</strong> <small>(${i.code})</small>`;
             div.onclick = () => { 
                 selectedItem = i; 
                 document.getElementById('itemSearch').value = i.name; 
@@ -78,12 +85,12 @@
             };
             box.appendChild(div);
         });
-        box.style.display = 'block';
+        box.style.display = matches.length > 0 ? 'block' : 'none';
     }
 
     function addToCart() {
         const qty = document.getElementById('qty').value;
-        if (!selectedItem || !qty) return tg.showAlert("សូមរើសទំនិញ និងចំនួន!");
+        if (!selectedItem || !qty) return tg.showAlert("សូមជ្រើសរើសទំនិញ និងបញ្ចូលចំនួន!");
         cart.push({ ...selectedItem, qty: qty });
         renderCart();
         document.getElementById('itemSearch').value = '';
@@ -93,21 +100,26 @@
 
     function renderCart() {
         const list = document.getElementById('cartList');
-        list.innerHTML = cart.map((item, i) => `<div class="cart-item"><span>${i+1}. ${item.name}</span> <span>${item.qty} ${item.unit}</span></div>`).join('');
+        list.innerHTML = cart.map((item, i) => `
+            <div class="cart-item">
+                <span>${i+1}. ${item.name}</span>
+                <span><strong>${item.qty}</strong> ${item.unit}</span>
+            </div>
+        `).join('');
     }
 
     async function submitEverything() {
-        if (cart.length === 0) return tg.showAlert("សូមបន្ថែមទំនិញសិន!");
+        if (cart.length === 0) return tg.showAlert("បញ្ជីទំនិញនៅទំនេរ!");
         const photos = document.getElementById('photoFile').files;
-        if (photos.length === 0) return tg.showAlert("សូមថតរូបបុងសិន!");
+        if (photos.length === 0) return tg.showAlert("សូមថតរូបបុងជាមុនសិន!");
 
-        const btn = document.getElementById('btnSubmitAll');
+        const btn = document.getElementById('btnAll');
         const loader = document.getElementById('loading');
         btn.disabled = true;
         loader.style.display = 'block';
 
         try {
-            // ១. បញ្ជូនទិន្នន័យទៅ Google Sheet និងទាញយក Caption មកវិញ
+            // ១. ផ្ញើទិន្នន័យទៅ Google Sheet
             const response = await fetch(SCRIPT_URL, { 
                 method: 'POST', 
                 body: JSON.stringify({
@@ -121,7 +133,7 @@
             const resJson = await response.json();
             const captionText = resJson.reportText;
 
-            // ២. រៀបចំផ្ញើរូបភាពជា Album ទៅ Telegram
+            // ២. ផ្ញើរូបភាពទៅ Telegram ជា Media Group (Album)
             const formData = new FormData();
             formData.append('chat_id', GROUP_ID);
             
@@ -132,7 +144,7 @@
                 media.push({
                     type: 'photo',
                     media: `attach://${fileKey}`,
-                    caption: i === 0 ? captionText : "", // ដាក់អត្ថបទតែលើរូបទី១
+                    caption: i === 0 ? captionText : "", 
                     parse_mode: 'Markdown'
                 });
             }
@@ -143,7 +155,7 @@
                 body: formData
             });
 
-            tg.showAlert("✅ បានរក្សាទុក និងរាយការណ៍រួចរាល់!");
+            tg.showAlert("✅ រក្សាទុក និងផ្ញើរបាយការណ៍ជោគជ័យ!");
             tg.close();
         } catch (e) {
             tg.showAlert("❌ មានបញ្ហា៖ " + e);
